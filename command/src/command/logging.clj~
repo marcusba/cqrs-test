@@ -1,0 +1,8 @@
+(ns command.logging)
+
+
+(def do-log? true)
+
+(defn apply-event [event-type aggregate event] (if do-log? (println "-> Apply (event/aggregate/event)" event-type aggregate event)))
+(defn execute-command [command aggregate params] (if do-log? (println "-> Command (command/aggregate/params)" command aggregate params)))
+(defn generated-events [events] (if do-log? (println "-> Generated events" events)))

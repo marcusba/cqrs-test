@@ -1,0 +1,3 @@
+(ns query.all-orders)
+
+(defn emit! [event] (println "got event" event))

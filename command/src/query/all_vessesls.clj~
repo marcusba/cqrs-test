@@ -1,0 +1,8 @@
+(ns query.all-orders (:require
+                      [event-store.storage :as s]
+                      ))
+
+(defmulti on-x! (fn [connection a-type event] (keyword (str (name a-type) "#" (name (:n event))))))
+(defmethod on-x! :order#order-created [connection a-type event]
+  (s/projection-insert! connection :all_orders {:aggregate (get-in event [:p :id])}))
+

@@ -1,0 +1,38 @@
+(ns aggregate.vessel (:require
+                   [clojure.tools.namespace.repl :refer [refresh]]
+                   [command.logging :as log]
+                   [command.apply]
+                     ))
+
+;all vessel event handlers - receives events
+(defmulti apply-vessel-event (fn [aggregate event] (:n event)))
+
+(defmethod apply-vessel-event :vessel-created [aggregate {{:keys [id name built]} :p :as event}]
+  (log/apply-event :vessel-created aggregate event)
+  (assoc aggregate :id id :name name :built built :periods [] :positions []))
+
+(defmethod apply-vessel-event :period-created [aggregate {:keys [p] :as event}]
+  (log/apply-event :period-created aggregate event)
+  (update aggregate :periods conj p))
+
+;pruned snapshot
+(defmethod apply-vessel-event :order-created-snapshot [aggregate event]
+  (log/apply-event :order-created aggregate event)
+  event)
+
+;start aggregate hydration
+(defmethod command.apply/apply-events :vessel [a-type aggregate events]
+  (reduce apply-vessel-event aggregate events))
+
+;commands - produces events
+(defn create-vessel [aggregate params]
+  (log/execute-command :create-vessel aggregate params)
+  (vector {:s (:id params) :n :vessel-created :p params}))
+
+(defn add-period [aggregate params]
+  (log/execute-command :add-period aggregate params)
+  (vector {:s (:id aggregate) :n :period-added :p params}))
+
+(defn report-position [aggregate params]
+  (log/execute-command :report-position aggregate params)
+  (vector {:s (:id aggregate) :n :position-reported :p params}))

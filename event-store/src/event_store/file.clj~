@@ -1,0 +1,19 @@
+(ns event-store.file (:require 
+                       [clojure.tools.namespace.repl :refer [refresh]]
+                       [event-store.storage :as storage]
+))
+
+(defmethod storage/connection-map :mysql [{:keys [type name user password host port]}] {:dbtype "mysql"
+                                                                :dbname name
+                                                                :user user
+                                                                :password password
+                                                                :host host
+                                                                :port port})
+
+(defmethod storage/persist-event! :mysql [connection event e?] (clojure.java.jdbc/insert! (storage/connection-map connection) "event" (storage/event-map event e?)))
+
+(defmethod storage/delete-streams! :mysql [connection] (clojure.java.jdbc/delete! (storage/connection-map connection) "event" []))
+
+(defmethod storage/stream :mysql [connection s e?]
+  (map #(storage/event-map-from-storage %)
+  (clojure.java.jdbc/query (storage/connection-map connection) ["select * from event where s = ? and e = ? order by t asc" s (if (= e? true) 1 0)])))
