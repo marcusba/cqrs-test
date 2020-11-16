@@ -51,7 +51,7 @@
   (mc/remove (connect connection) (if e? "event" "command") {:_id (uu/parse-uuid s)}))
 
 (defmethod s/stream- :mongodb [connection s e?]
-  (:entities (first (mc/find-maps (connect connection) (if e? "event" "command") {:_id (uu/parse-uuid s)}))))
+  (map #(assoc % :n (keyword (:n %))) (:entities (first (mc/find-maps (connect connection) (if e? "event" "command") {:_id (uu/parse-uuid s)})))))
 
 (defmethod s/delete-event! :mongodb [connection s event]
   (def stream (first (mc/find-maps (connect connection) "event" {:_id (uu/parse-uuid s)})))
