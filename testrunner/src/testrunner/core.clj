@@ -335,20 +335,16 @@
 (defn reset-event-store! [storage]
   (s/delete-streams! storage))
 
-(defn run-single-tests- [storage event-sourced? iterations aggregates pruning-data pre-fn post-fn]
-  (if (not (nil? post-fn)) (pre-fn))
+(defn run-single-tests- [storage event-sourced? iterations aggregates pruning-data]
   (def results (doall (if event-sourced? 
     (map (fn [a] (doall (repeatedly iterations #(b/benchmark (d/load-aggregate-es- storage :vessel a))))) aggregates)
     (map (fn [a] (doall (repeatedly iterations #(b/benchmark (d/load-aggregate-cs- storage :vessel a))))) aggregates)
     )))
 
-  (def res (map-indexed (fn [idx e]
-                 {:a-id (nth aggregates idx)
-                            :load-times-ms e
-                  :pruning-time-ms (:time-ms (nth pruning-data idx))}) results))
-  (if (not (nil? pre-fn)) (post-fn))
-  res
-  )
+  (map-indexed (fn [idx e]
+              {:a-id (nth aggregates idx)
+                        :load-times-ms e
+               :pruning-time-ms (:time-ms (nth pruning-data idx))}) results))
 
 (defn cooldown [s] (println "Cooldown" s "s") (Thread/sleep (* 1000 s)))
 
