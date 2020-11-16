@@ -1,0 +1,10 @@
+(ns util.benchmarking)
+
+
+(defmacro benchmark
+"Times the execution of forms, discarding their output and returning
+a long in nanoseconds."
+([& forms]
+`(let [start# (System/nanoTime)]
+~@forms
+(- (System/nanoTime) start#))))
