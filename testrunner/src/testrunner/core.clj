@@ -81,11 +81,13 @@
   {
    ;simulation 
    :tmp-num-vessels (rand-range-int 120 180) ; num vessels to be generated
-   :num-vessels 3
+   :num-vessels 1
    :tmp2-num-vessels 150
    :preferred-vessels [40 1.3] ; 40% of vessels are preffered with weight at 1.3
-   :vessel-age [80 24 100 12] ; vessel age (determines if a vessel can be assigned a job) distribution 80% are 24 months old, 20% are 12 months old.
-   :fixtures-per-month (vec (repeat 24 2))
+   :x-vessel-age [80 24 100 12] ; vessel age (determines if a vessel can be assigned a job) distribution 80% are 24 months old, 20% are 12 months old.
+   :old-fixtures-per-month (vec (repeat 24 2))
+   :fixtures-per-month [1]
+   :vessel-age [100 24]
 
    :tmp-fixtures-per-month [(rand-range-int 15 30) ;january year 1
                         (rand-range-int 15 30) ;february
@@ -154,7 +156,7 @@
    :tmp-test-iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
    :test-iterations 10
    :tmp-cooldown-time 300 ;sec delay before each test set (per pruning)
-   :cooldown-time 60
+   :cooldown-time 1
    :test-output-dir (str (System/getProperty "user.home") "/data/testrunner")
    })
 
@@ -441,7 +443,7 @@
 (defn run-single-store-tests! [config storage all-commands prefn postfn]
   (println "============ Start" (:type storage) "testing ============")
 
-  (if (not (nil? prefn)) (prefn))
+;  (if (not (nil? prefn)) (prefn))
   ;prepare - keep existing commands or produce new onew
   (if (not (nil? all-commands)) (do
                                             (println "Clearing out event store" (:type storage))
@@ -451,16 +453,16 @@
                                             (println "Backing up events" (:type storage))
                                             (s/backup-event-store! storage)))
 
-  (def res {:no-pruning {:aggregates (add-aggregate-metadata- storage (run-no-pruning-tests! config storage) true) }
-   :superseeded {:aggregates (add-aggregate-metadata- storage (run-superseeded-tests! config storage) true) }
-   :bounded {:aggregates (add-aggregate-metadata- storage (run-bounded-tests! config storage) true) }
-   :probabilistic {:aggregates (add-aggregate-metadata- storage (run-probabilistic-tests! config storage) true) }
-   :hierarchical {:aggregates (add-aggregate-metadata- storage (run-hierarchical-tests! config storage) true) }
-   :full-snapshot {:aggregates (add-aggregate-metadata- storage (run-full-snapshot-tests! config storage) true) }
+  (def res {;:no-pruning {:aggregates (add-aggregate-metadata- storage (run-no-pruning-tests! config storage) true) }
+   ;:superseeded {:aggregates (add-aggregate-metadata- storage (run-superseeded-tests! config storage) true) }
+   ;:bounded {:aggregates (add-aggregate-metadata- storage (run-bounded-tests! config storage) true) }
+   ;:probabilistic {:aggregates (add-aggregate-metadata- storage (run-probabilistic-tests! config storage) true) }
+   ;:hierarchical {:aggregates (add-aggregate-metadata- storage (run-hierarchical-tests! config storage) true) }
+   ;:full-snapshot {:aggregates (add-aggregate-metadata- storage (run-full-snapshot-tests! config storage) true) }
    :command-sourcing {:aggregates (add-aggregate-metadata- storage (run-command-sourcing-tests! config storage) false) }
             })
 
-  (if (not (nil? postfn)) (postfn))
+ ; (if (not (nil? postfn)) (postfn))
   res
  )
 
@@ -473,7 +475,7 @@
   (println "Generating commands")
   (def all-commands (generate-commands config))
   {:metadata {:num-fixtures (reduce #(if (= (:command %2) "aggregate.fixture/create-fixture") (inc %1) %1) 0 all-commands)}
-   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands #(sh "service" "mongod" "start") #(sh "service" "mongod" "stop"))
+   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "start") #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "stop"))
    :mysql (run-single-store-tests! config (:storage-mysql config) all-commands nil nil)
    :multi-file-edn (run-single-store-tests! config (:storage-multi-file-edn config) all-commands nil nil)
    }
@@ -483,15 +485,15 @@
   (println ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
   (println ">>>>>>>>>>>>>>>>>>>>>>>>>> Starting test-on-existing-data-set! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
   (println ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-  (sh "service" "mongod" "start")
+  (sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "start")
   (s/restore-event-store! (:storage-mysql config))
   (s/restore-event-store! (:storage-mongodb config))
   (s/restore-event-store! (:storage-multi-file-edn config))
 
   {:metadata nil
-   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands #(sh "service" "mongod" "start") #(sh "service" "mongod" "stop"))
-   :mysql (run-single-store-tests! config (:storage-mysql config) nil nil nil)
-   :multi-file-edn (run-single-store-tests! config (:storage-multi-file-edn config) nil nil nil)
+   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "start") #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "stop"))
+;   :mysql (run-single-store-tests! config (:storage-mysql config) nil nil nil)
+;   :multi-file-edn (run-single-store-tests! config (:storage-multi-file-edn config) nil nil nil)
    }
  )
 

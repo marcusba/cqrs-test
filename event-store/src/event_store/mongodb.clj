@@ -15,7 +15,7 @@
 
 (defmethod s/event-map :mongodb [connection {:keys [s n p] :as event} e?]
   {:t (util.unixtime/timestamp)
-   :n (name n)
+   :n (clojure.string/replace (str n) #":" "")
    :p p})
 
 ;oh.. not a map
@@ -34,15 +34,17 @@
 
 (defmethod s/persist-event! :mongodb [connection event e?]
   (def existing-stream (s/stream- connection (:s event) e?))
-  
+
+  (def data {:s (:s event)
+              :entities (conj
+                         (if (nil? existing-stream) [] (vec (map #(assoc % :n (clojure.string/replace (str (:n %)) #":" "")) existing-stream)))
+                         (s/event-map connection event e?))})
+
   (mc/update (connect connection) (if e? "event" "command")
              {:_id (uu/parse-uuid (:s event))}
-             {:s (:s event)
-              :entities (conj
-                         (if (nil? existing-stream) [] existing-stream)
-                         (s/event-map connection event e?))}
+             data
              {:upsert true}))
-                    
+
 (defmethod s/delete-streams! :mongodb [connection]
   (mc/remove (connect connection) "event")
   (mc/remove (connect connection) "command"))
@@ -51,7 +53,9 @@
   (mc/remove (connect connection) (if e? "event" "command") {:_id (uu/parse-uuid s)}))
 
 (defmethod s/stream- :mongodb [connection s e?]
-  (map #(assoc % :n (keyword (:n %))) (:entities (first (mc/find-maps (connect connection) (if e? "event" "command") {:_id (uu/parse-uuid s)})))))
+  (if (empty? s)
+    []
+    (map #(assoc % :n (keyword (:n %))) (:entities (mc/find-map-by-id (connect connection) (if e? "event" "command") (uu/parse-uuid s))))))
 
 (defmethod s/delete-event! :mongodb [connection s event]
   (def stream (first (mc/find-maps (connect connection) "event" {:_id (uu/parse-uuid s)})))

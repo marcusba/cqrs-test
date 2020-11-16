@@ -22,6 +22,14 @@
 (def multi-file-edn {:type :multi-file-edn
                      :directory "/home/marcus/data/event-store"})
 
+(def mongodb  {:type :mongodb
+              :name "event-store"
+              :user "event-store"
+              :password "password"
+              :host "localhost"
+              :port 27017})
+
+
 (def connection mysql)
 
 (defn load-aggregate-es- "Load aggregate for event sourcing. Pass in events as last parameter or fetch all from the store"
@@ -55,12 +63,11 @@
 
 (defn dispatch-cs! "Execute command command sourced" [connection a-type a-id f params]
   (def aggregate (load-aggregate-cs- connection a-type a-id))
-
   (def events (-> f
       symbol
       resolve
       (#(apply % [aggregate params]))))
-
+  
   (command.apply/apply-events a-type aggregate events)
   (s/persist-event! connection {:s (if (empty? a-id) (:id params) a-id) :n f :p params} false)
   (doall (map #(query.event/emit! mysql a-type %) events))
