@@ -15,6 +15,7 @@
                      [clj-memory-meter.core :as mm]
                      [clojure.java.io :as io]
                      [clojure.core.matrix.stats :as stats]
+                     [clojure.java.shell :refer [sh]]
   ))
 
 
