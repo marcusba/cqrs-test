@@ -12,25 +12,13 @@
                       [query.event]
                       ))
 
+; projections store
 (def mysql {:type :mysql
                        :name "event_store"
                        :user "event_store"
                        :password "password"
                        :host "localhost"
                  :port 3306})
-
-(def multi-file-edn {:type :multi-file-edn
-                     :directory "/home/marcus/data/event-store"})
-
-(def mongodb  {:type :mongodb
-              :name "event-store"
-              :user "event-store"
-              :password "password"
-              :host "localhost"
-              :port 27017})
-
-
-(def connection mysql)
 
 (defn load-aggregate-es- "Load aggregate for event sourcing. Pass in events as last parameter or fetch all from the store"
   ([connection a-type a-id] (command.apply/apply-events a-type {} (s/stream- connection a-id true)))

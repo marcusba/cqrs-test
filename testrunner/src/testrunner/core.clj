@@ -67,27 +67,18 @@
 ; end helper
 
 ;start config
-
-
-                                        ;missing parameters.. clustering to certain vessels
-                                      ; large events.. how
-                                        ; vessels with no jobs hav noe idle periods either.. but they are maybe not so interesting.. ?
-                                        ; just one idle period between jobs.. too little?.. splitting if larger than 14 days
-                                        ; fixture distribution winter: 1,2,12 spring: 3,4,5 summer: 6,7,8 autumn: 9,10,11
-;execute on multiple cores?
-; 
+;fixture distribution months: winter: 1,2,12 spring: 3,4,5 summer: 6,7,8 autumn: 9,10,11
 
 (def test-config
   {
    ;simulation 
-   :tmp-num-vessels (rand-range-int 120 180) ; num vessels to be generated
-   :num-vessels 3
-   :tmp2-num-vessels 150
+   :x-num-vessels (rand-range-int 120 313) ; num vessels to be generated see \cite{obtainingContracts} p 19
+   :num-vessels 1
    :preferred-vessels [40 1.3] ; 40% of vessels are preffered with weight at 1.3
-   :vessel-age [80 24 100 12] ; vessel age (determines if a vessel can be assigned a job) distribution 80% are 24 months old, 20% are 12 months old.
-   :fixtures-per-month (vec (repeat 24 2))
-
-   :tmp-fixtures-per-month [(rand-range-int 15 30) ;january year 1
+   :x-vessel-age [80 24 100 12] ; vessel age (determines if a vessel can be assigned a job) distribution 80% are 24 months old, 20% are 12 months old. Average of average 7 years \cite{obtainingContracts}
+   :vessel-age [100 444]
+   :fixtures-per-month [1 1]
+   :x-fixtures-per-month [(rand-range-int 15 30) ;january year 1
                         (rand-range-int 15 30) ;february
                         (rand-range-int 20 35) ;march
                         (rand-range-int 20 35) ;april
@@ -113,8 +104,8 @@
                         (rand-range-int 15 30) ;december
                         ] ;(vec (repeat 24 2)) ; over 2 years
    :contract-lengths [80 14 100 3] ; job lengths 80% are 14 days long, 20% are 3 days long
-   :ais-event-resolution 24 ; hours between each report
-   :tmp-ais-event-resolution 720
+   :x-ais-event-resolution 24 ; hours between each report
+   :ais-event-resolution 4
 
    ;dates
    :start-date-time (t/zoned-date-time 2019 2 1) ; simulation starts 2019-02 at and ends at 2021-01 (including)
@@ -151,12 +142,15 @@
    ;test orchestration
    :tmp-random-data-sets 5 ;times the whole suite of tests will be run. i.e. how many distinct data sets we will generate
    :random-data-sets 1
-   :tmp-test-iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
-   :test-iterations 10
-   :tmp-cooldown-time 300 ;sec delay before each test set (per pruning)
-   :cooldown-time 30
+   :x-test-iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
+   :test-iterations 5
+   :x-cooldown-time 300 ;sec delay before each test set (per pruning)
+   :cooldown-time 1
    :test-output-dir (str (System/getProperty "user.home") "/data/testrunner")
    })
+
+                                        ;results
+;700 events: 
 
 ; command generation functions:
 
@@ -435,6 +429,7 @@
                                           :size-of-commands-bytes (mm/measure commands :bytes true)
                                           :command-types (frequencies (map #(keyword (name (:n %))) commands))
                                           :average-load-times-ms (stats/mean (:load-times-ms t))
+                                          :load-times-ms nil
                                           ))
                )))))
 
@@ -452,12 +447,12 @@
                                             (s/backup-event-store! storage)))
 
   (def res {:no-pruning {:aggregates (add-aggregate-metadata- storage (run-no-pruning-tests! config storage) true) }
-   :superseeded {:aggregates (add-aggregate-metadata- storage (run-superseeded-tests! config storage) true) }
-   :bounded {:aggregates (add-aggregate-metadata- storage (run-bounded-tests! config storage) true) }
-   :probabilistic {:aggregates (add-aggregate-metadata- storage (run-probabilistic-tests! config storage) true) }
-   :hierarchical {:aggregates (add-aggregate-metadata- storage (run-hierarchical-tests! config storage) true) }
-   :full-snapshot {:aggregates (add-aggregate-metadata- storage (run-full-snapshot-tests! config storage) true) }
-   :command-sourcing {:aggregates (add-aggregate-metadata- storage (run-command-sourcing-tests! config storage) false) }
+;   :superseeded {:aggregates (add-aggregate-metadata- storage (run-superseeded-tests! config storage) true) }
+;   :bounded {:aggregates (add-aggregate-metadata- storage (run-bounded-tests! config storage) true) }
+;   :probabilistic {:aggregates (add-aggregate-metadata- storage (run-probabilistic-tests! config storage) true) }
+;   :hierarchical {:aggregates (add-aggregate-metadata- storage (run-hierarchical-tests! config storage) true) }
+;   :full-snapshot {:aggregates (add-aggregate-metadata- storage (run-full-snapshot-tests! config storage) true) }
+;   :command-sourcing {:aggregates (add-aggregate-metadata- storage (run-command-sourcing-tests! config storage) false) }
             })
 
  ; (if (not (nil? postfn)) (postfn))
@@ -473,25 +468,9 @@
   (println "Generating commands")
   (def all-commands (generate-commands config))
   {:metadata {:num-fixtures (reduce #(if (= (:command %2) "aggregate.fixture/create-fixture") (inc %1) %1) 0 all-commands)}
-   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "start") #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "stop"))
+   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands nil nil)
    :mysql (run-single-store-tests! config (:storage-mysql config) all-commands nil nil)
    :multi-file-edn (run-single-store-tests! config (:storage-multi-file-edn config) all-commands nil nil)
-   }
- )
-
-(defn test-on-existing-data-set! [config]
-  (println ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-  (println ">>>>>>>>>>>>>>>>>>>>>>>>>> Starting test-on-existing-data-set! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-  (println ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-  (sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "start")
-  (s/restore-event-store! (:storage-mysql config))
-  (s/restore-event-store! (:storage-mongodb config))
-  (s/restore-event-store! (:storage-multi-file-edn config))
-
-  {:metadata nil
-   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "start") #(sh "/usr/bin/sudo" "/usr/sbin/service" "mongod" "stop"))
-   :mysql (run-single-store-tests! config (:storage-mysql config) nil nil nil)
-   :multi-file-edn (run-single-store-tests! config (:storage-multi-file-edn config) nil nil nil)
    }
  )
 
@@ -499,6 +478,10 @@
   (def output-fn (str directory "/" (ut/timestamp) ".edn"))
   (io/make-parents output-fn)
   (spit output-fn (pr-str data))
+  (clojure.pprint/pprint data)
+  (println "multi-file-edn" (get-in data [:multi-file-edn :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
+  (println "mongodb" (get-in data [:mongodb :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
+  (println "mysql" (get-in data [:mysql :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
   (println "Output written to" output-fn)
   )
 
@@ -506,11 +489,6 @@
   (doall (repeatedly (:random-data-sets config)
                      #(write-test-results! (test-on-new-data-set! config) (:test-output-dir config))
                      ))
-  (println "Done!")
-)
-
-(defn execute-existing! [config]
-  (write-test-results! (test-on-existing-data-set! config) (:test-output-dir config))
   (println "Done!")
 )
 

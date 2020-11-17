@@ -25,7 +25,7 @@
 
 
 (def multi-file-edn {:type :multi-file-edn
-                       :directory "/home/marcus/data/event-store"})
+                       :directory (str (System/getProperty "user.home") "/data/event-store")})
 
 (def all-event-names #{:vessel-created :vessel-updated :position-reported :period-added :fixture-created})
                                   

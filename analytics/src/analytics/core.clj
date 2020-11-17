@@ -7,8 +7,8 @@
                                 [clojure.core.matrix.stats :as s]
                     ))
 
-(def config {:source-directory "/home/marcus/data/testrunner"
-             :target-directory "/home/marcus/data/analytics"})
+(def config {:source-directory (str (System/getProperty "user.home") "/data/testrunner")
+             :target-directory (str (System/getProperty "user.home") "/data/analytics")})
 
 (defn pprint-to-string [o]
   (def out (java.io.StringWriter.))
