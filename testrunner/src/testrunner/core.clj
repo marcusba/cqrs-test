@@ -105,7 +105,7 @@
                         ] ;(vec (repeat 24 2)) ; over 2 years
    :contract-lengths [80 14 100 3] ; job lengths 80% are 14 days long, 20% are 3 days long
    :x-ais-event-resolution 24 ; hours between each report
-   :ais-event-resolution 4
+   :ais-event-resolution 1000
 
    ;dates
    :start-date-time (t/zoned-date-time 2019 2 1) ; simulation starts 2019-02 at and ends at 2021-01 (including)
@@ -480,8 +480,8 @@
   (spit output-fn (pr-str data))
   (clojure.pprint/pprint data)
   (println "multi-file-edn" (get-in data [:multi-file-edn :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
-  (println "mongodb" (get-in data [:mongodb :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
-  (println "mysql" (get-in data [:mysql :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
+  (println "mongodb" (get-in data [:mongodb :no-pruning :aggregates 0 :num-events]) (get-in data [:mongodb :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
+  (println "mysql" (get-in data [:mysql :no-pruning :aggregates 0 :num-events]) (get-in data [:mysql :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
   (println "Output written to" output-fn)
   )
 
