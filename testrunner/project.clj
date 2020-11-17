@@ -15,5 +15,5 @@
                  [net.mikera/core.matrix "0.62.0"]
                  ]
   :main ^:skip-aot testrunner.core
-  :jvm-opts ["-Djdk.attach.allowAttachSelf"] 
+  :jvm-opts ^:replace ["-Djdk.attach.allowAttachSelf"]
   :repl-options {:init-ns testrunner.core})

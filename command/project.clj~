@@ -7,5 +7,6 @@
                  [org.clojure/tools.namespace "0.3.1"]
                  [event-store "0.1.0-SNAPSHOT"]
                  [util "0.1.0-SNAPSHOT"]
+                 [net.mikera/core.matrix "0.62.0"]
                  ]
   :repl-options {:init-ns command.core})

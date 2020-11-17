@@ -10,4 +10,5 @@
                  [util "0.1.0-SNAPSHOT"]
                  [com.novemberain/monger "3.1.0"]
                  ]
+  :jvm-opts ^:replace []
   :repl-options {:init-ns event-store.core})

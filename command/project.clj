@@ -9,4 +9,5 @@
                  [util "0.1.0-SNAPSHOT"]
                  [net.mikera/core.matrix "0.62.0"]
                  ]
+  :jvm-opts ^:replace []
   :repl-options {:init-ns command.core})
