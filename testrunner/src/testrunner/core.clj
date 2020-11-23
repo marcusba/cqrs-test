@@ -264,7 +264,7 @@
                                     )))
       )))
 
-(defn generate-ais-report-commands [vessels ais-event-resolution start-date-time from-date-time end-date-time]
+(defn generate-ais-report-commands [vessels ais-event-resolution start-date-time end-date-time]
   (def start (ut/from-zoned-date-time from-date-time))
   (def end (ut/from-zoned-date-time end-date-time))
   (def time-delay (* ais-event-resolution 60 60 1000))
