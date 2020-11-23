@@ -125,10 +125,8 @@
 
    ;test orchestration
    :random-data-sets 1 ;times the whole suite of tests will be run. i.e. how many distinct data sets we will generate
-   :x-test-iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
-   :test-iterations 5
-   :x-cooldown-time 300 ;sec delay before each test set (per pruning)
-   :cooldown-time 1
+   :iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
+   :cooldown-time 300 ;sec delay before each test set (per pruning)
    :test-output-dir "/mnt/data/testrunner"
    })
 
