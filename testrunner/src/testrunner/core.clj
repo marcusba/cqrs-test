@@ -74,7 +74,8 @@
 ; end helper
 
 ;start config
-(def num-vessels (rand-range-int 120 313))
+(def old-num-vessels (rand-range-int 120 313))
+(def num-vessels (rand-range-int 12 31))
 
 (def test-config
   {
@@ -82,7 +83,7 @@
    :num-vessels num-vessels ; num vessels to be generated see \cite{obtainingContracts} p 19
    ;:avg-vessel-age (rand-range 6 (inc 9)) ; vessel age to distribute see \cite{obtainingContracts} p 19
    :min-vessel-age 0 ; see \cite{obtainingContracts} p 19
-   :max-vessel-age 37 ; see \cite{obtainingContracts} p 19
+   :max-vessel-age 11 ; see \cite{obtainingContracts} p 19
    :preferred-vessels [40 1.3] ; 40% of vessels are preffered with weight at 1.3. Not from any source.
    :min-vessel-utilization 0.31 ; \cite{obtainingContracts} p 20
    :max-vessel-utilization 0.72 ; \cite{obtainingContracts} p 20
@@ -92,7 +93,7 @@
 
    ;dates
    :start-date-time (t/zoned-date-time 2021 1 1) ; simulation starts
-   :end-date-time (t/zoned-date-time 2057 12 31) ; simulation ends
+   :end-date-time (t/zoned-date-time 2031 12 31) ; simulation ends
 
    ;pruning
    :bounded-buffer 100 ; keep last 50 events. snapshot of the rest
@@ -265,7 +266,7 @@
       )))
 
 (defn generate-ais-report-commands [vessels ais-event-resolution start-date-time end-date-time]
-  (def start (ut/from-zoned-date-time from-date-time))
+  (def start (ut/from-zoned-date-time start-date-time))
   (def end (ut/from-zoned-date-time end-date-time))
   (def time-delay (* ais-event-resolution 60 60 1000))
 
