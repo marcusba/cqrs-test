@@ -9,6 +9,8 @@
                        [util.uuid :as uu]
                        ))
 
+;(mg/set-default-write-concern! 0)
+
 (def existing-connection (atom nil))
 
 (defn table-name [e?] (if (or (true? e?) (= 1 e?)) :event :command))

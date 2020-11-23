@@ -12,9 +12,9 @@
 
 (defn timestamp [] (System/currentTimeMillis))
 (defn to-zoned-date-time [timestamp timezone] (java-time/zoned-date-time (java-time/instant timestamp) timezone))
-(defn from-zoned-date-time [time] (inst-ms (java-time/instant time)))
+(defn from-zoned-date-time [time] (if (nil? time) 0 (inst-ms (java-time/instant time))))
 (defn to-offset-date-time [timestamp offset] (java-time/zoned-date-time (java-time/instant timestamp) offset))
-(defn from-offset-date-time [time] (inst-ms (java-time/instant time)))
+(defn from-offset-date-time [time] (if (nil? time) 0 (inst-ms (java-time/instant time))))
 
 (defn overlaps? [[from to] targets] "All parameters are unix timestamps. targets = vector of [from to] vectors. Returns true if source overlaps at least one target"
   (reduce (fn [overlapped [target-from target-to]]
@@ -28,3 +28,9 @@
 
 (defn str-date-time [timestamp] (java-time/format "yyyy-MM-dd HH:mm:ss:SSS" (to-zoned-date-time timestamp "Europe/Oslo")))
 (defn str-date [timestamp] (java-time/format "yyyy-MM-dd" (to-zoned-date-time timestamp "Europe/Oslo")))
+
+
+
+
+(defn split-zoned-date-time-into-months [from to]
+ (take-while #(< (from-zoned-date-time %) (from-zoned-date-time to)) (java-time/iterate java-time/plus from (java-time/months 1))))

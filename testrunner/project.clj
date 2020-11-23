@@ -14,6 +14,6 @@
                  [com.clojure-goes-fast/clj-memory-meter "0.1.3"]
                  [net.mikera/core.matrix "0.62.0"]
                  ]
-  :main ^:skip-aot testrunner.core
+  :main testrunner.core
   :jvm-opts ^:replace ["-Djdk.attach.allowAttachSelf"]
   :repl-options {:init-ns testrunner.core})

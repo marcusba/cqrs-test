@@ -18,7 +18,16 @@
                        :user "event_store"
                        :password "password"
                        :host "localhost"
-                 :port 3306})
+            :port 3306})
+
+(def aggregate-cache! (atom {}))
+
+(defn update-aggregate-cache! [{:keys [id] :as a}]
+  (reset! aggregate-cache! (assoc @aggregate-cache! (keyword id) a)))
+
+(defn reset-aggregate-cache! [] (reset! aggregate-cache! {}))
+
+(defn load-aggregate-cache- [a-id] "Load based on in-memory aggregates in aggregate-cache!" (get @aggregate-cache! (keyword a-id) {}))
 
 (defn load-aggregate-es- "Load aggregate for event sourcing. Pass in events as last parameter or fetch all from the store"
   ([connection a-type a-id] (command.apply/apply-events a-type {} (s/stream- connection a-id true)))
@@ -44,6 +53,22 @@
                   resolve
                   (#(apply % [(load-aggregate-es- connection a-type a-id) params]))))
 
+  (s/persist-event! connection {:s (if (empty? a-id) (:id params) a-id) :n f :p params} false) ; persist command.. not event
+  (doall (map #(s/persist-event! connection % true) events))
+  (doall (map #(query.event/emit! mysql a-type %) events))
+  )
+
+(defn dispatch-aggregate-cache! "Execute command on aggregate cached in memory" [connection a-type a-id f params]
+  (def existing-aggregate (load-aggregate-cache- a-id))
+
+  (def events (-> f
+                  symbol
+                  resolve
+                  (#(apply % [existing-aggregate params]))))
+
+  (def new-aggregate (command.apply/apply-events a-type existing-aggregate events))
+  (update-aggregate-cache! new-aggregate)
+ 
   (s/persist-event! connection {:s (if (empty? a-id) (:id params) a-id) :n f :p params} false) ; persist command.. not event
   (doall (map #(s/persist-event! connection % true) events))
   (doall (map #(query.event/emit! mysql a-type %) events))

@@ -1,4 +1,4 @@
-(ns testrunner.core (:require
+(ns testrunner.core (:gen-class) (:require
                      [clojure.tools.namespace.repl :refer [refresh]]
                      [clojure.pprint]
                      [clojure.edn]
@@ -18,11 +18,18 @@
                      [clojure.java.shell :refer [sh]]
   ))
 
-
-;helper functions
-
 (defn rand-range-int [from to] "Rand within interval. Inc from exc to" (+ (rand-int (- to from)) from))
 (defn rand-range [from to] "Rand within interval. Inc from exc to" (+ (rand (- to from)) from))
+
+(defn assign-randomly-to-seq [value min-value-per-assignment max-value-per-assignment]
+  (loop [res []]
+    (if (>= (reduce + res) value)
+      res
+      (recur (conj res (rand-range-int min-value-per-assignment (inc max-value-per-assignment)))
+             ))))
+   
+(defn rand-range-int-seq [num-elements min max]
+  (map (fn [_] (rand-range-int min (inc max))) (range num-elements)))
 
 (defn percentile-data [pst v] "pst = Target %. v = Vector with alternating values of percentile / data. Returns data of target percentile."
   (last (first
@@ -67,49 +74,25 @@
 ; end helper
 
 ;start config
-;fixture distribution months: winter: 1,2,12 spring: 3,4,5 summer: 6,7,8 autumn: 9,10,11
+(def num-vessels (rand-range-int 120 313))
 
 (def test-config
   {
-   ;simulation 
-   :x-num-vessels (rand-range-int 120 313) ; num vessels to be generated see \cite{obtainingContracts} p 19
-   :num-vessels 1
-   :preferred-vessels [40 1.3] ; 40% of vessels are preffered with weight at 1.3
-   :x-vessel-age [80 24 100 12] ; vessel age (determines if a vessel can be assigned a job) distribution 80% are 24 months old, 20% are 12 months old. Average of average 7 years \cite{obtainingContracts}
-   :vessel-age [100 444]
-   :fixtures-per-month [1 1]
-   :x-fixtures-per-month [(rand-range-int 15 30) ;january year 1
-                        (rand-range-int 15 30) ;february
-                        (rand-range-int 20 35) ;march
-                        (rand-range-int 20 35) ;april
-                        (rand-range-int 20 35) ;may
-                        (rand-range-int 25 45) ;june
-                        (rand-range-int 25 45) ;july
-                        (rand-range-int 25 45) ;august
-                        (rand-range-int 20 35) ;september
-                        (rand-range-int 20 35) ;october
-                        (rand-range-int 20 25) ;november
-                        (rand-range-int 15 30) ;december
-                        (rand-range-int 15 30) ;january year 2
-                        (rand-range-int 15 30) ;february
-                        (rand-range-int 20 35) ;march
-                        (rand-range-int 20 35) ;april
-                        (rand-range-int 20 35) ;may
-                        (rand-range-int 25 45) ;june
-                        (rand-range-int 25 45) ;july
-                        (rand-range-int 25 45) ;august
-                        (rand-range-int 20 35) ;september
-                        (rand-range-int 20 35) ;october
-                        (rand-range-int 20 35) ;november
-                        (rand-range-int 15 30) ;december
-                        ] ;(vec (repeat 24 2)) ; over 2 years
-   :contract-lengths [80 14 100 3] ; job lengths 80% are 14 days long, 20% are 3 days long
-   :x-ais-event-resolution 24 ; hours between each report
-   :ais-event-resolution 1000
+   ;simulation
+   :num-vessels num-vessels ; num vessels to be generated see \cite{obtainingContracts} p 19
+   ;:avg-vessel-age (rand-range 6 (inc 9)) ; vessel age to distribute see \cite{obtainingContracts} p 19
+   :min-vessel-age 0 ; see \cite{obtainingContracts} p 19
+   :max-vessel-age 37 ; see \cite{obtainingContracts} p 19
+   :preferred-vessels [40 1.3] ; 40% of vessels are preffered with weight at 1.3. Not from any source.
+   :min-vessel-utilization 0.31 ; \cite{obtainingContracts} p 20
+   :max-vessel-utilization 0.72 ; \cite{obtainingContracts} p 20
+   :min-contract-length 3 ; min days of contract. spot market is <= 30 days
+   :max-contract-length 30 ; max days of contract. spot market is <= 30 days
+   :ais-event-resolution 24 ; hours between each report.. track candidate vessels for a given area
 
    ;dates
-   :start-date-time (t/zoned-date-time 2019 2 1) ; simulation starts 2019-02 at and ends at 2021-01 (including)
-   :now-date-time (t/zoned-date-time 2020 12 31) ; things happening after this date is in the future (e.g. no AIS reports etc)
+   :start-date-time (t/zoned-date-time 2021 1 1) ; simulation starts
+   :end-date-time (t/zoned-date-time 2057 12 31) ; simulation ends
 
    ;pruning
    :bounded-buffer 100 ; keep last 50 events. snapshot of the rest
@@ -123,7 +106,7 @@
                        :host "localhost"
                        :port 3306}
    :storage-multi-file-edn {:type :multi-file-edn
-                            :directory (str (System/getProperty "user.home") "/data/event-store")}
+                            :directory "/mnt/data/event-store"}
    :storage-mongodb {:type :mongodb
               :name "event-store"
               :user "event-store"
@@ -140,17 +123,13 @@
                          :port 3306}
 
    ;test orchestration
-   :tmp-random-data-sets 5 ;times the whole suite of tests will be run. i.e. how many distinct data sets we will generate
-   :random-data-sets 1
+   :random-data-sets 1 ;times the whole suite of tests will be run. i.e. how many distinct data sets we will generate
    :x-test-iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
    :test-iterations 5
    :x-cooldown-time 300 ;sec delay before each test set (per pruning)
    :cooldown-time 1
-   :test-output-dir (str (System/getProperty "user.home") "/data/testrunner")
+   :test-output-dir "/mnt/data/testrunner"
    })
-
-                                        ;results
-;700 events: 
 
 ; command generation functions:
 
@@ -165,104 +144,6 @@
               :notes notes}}
   )
 
-(defn generate-idle-commands [fixture prev-fixture vessel now-date-time]
-
-  (def now-ut (ut/from-zoned-date-time now-date-time))
-  (def from (let []
-              (def tmp-from (if (nil? prev-fixture)
-                (get-in vessel [:p :built])
-                ( + 1 (get-in prev-fixture [:p :to]))))
-
-              (if (> tmp-from now-ut) now-ut tmp-from)))
-
-  (def to (let []
-              (def tmp-to (- (get-in fixture [:p :from]) 1))
-              (if (> tmp-to now-ut) now-ut tmp-to)))
-
-  (def days-14 (* 86400000 14))
-
-  (if (= from to)
-    []
-     (if (> (- to from) days-14) ;split in tow if over 14 days
-       [(generate-period-command (get-in vessel [:p :id]) :vessel from (- (+ from days-14) 1) "Some first idle period")
-        (generate-period-command (get-in vessel [:p :id]) :vessel (+ from days-14) to "Some other idle period")]
-       
-       (if (< (- to from) 0) []
-           [(generate-period-command (get-in vessel [:p :id]) :vessel from to "Some idle period")])
-       )))
-
-(defn assign-fixture-to-vessel [fixture vessels vessel-fixtures preferred-vessels now-date-time]
-  (loop [drawn-vessel (select-by-weight vessels (first preferred-vessels) (last preferred-vessels)) tries 0]
-    (def drawn-vessel-id (get-in drawn-vessel [:p :id]))
-    (def drawn-vessel-built (get-in drawn-vessel [:p :built]))
-    (def fixtures-to-check (filter #(= drawn-vessel-id (get-in % [:p :vessel-id])) vessel-fixtures))
-    (def overlapping-fixtures (filter (fn [f]
-                                        (let [fixture-from (get-in fixture [:p :from])
-                                              fixture-to (get-in fixture [:p :to])
-                                              check-from (get-in f [:p :from])
-                                              check-to (get-in f [:p :to])]
-
-                                          (if (or
-                                               (and (>= fixture-from check-from) (<= fixture-from check-to))
-                                               (and (>= fixture-to check-from) (<= fixture-to check-to))
-                                               ) true false)
-                                          )) fixtures-to-check))
-    (def prev-fixture (last fixtures-to-check))
-    (def all-commands (conj (generate-idle-commands fixture prev-fixture drawn-vessel now-date-time)
-                            (generate-period-command drawn-vessel-id :fixture (get-in fixture [:p :from]) (get-in fixture [:p :to]) "")
-                            (assoc-in fixture [:p :vessel-id] drawn-vessel-id)))
-    (if (= tries (* (count vessels) 100)) (throw (Exception. "Could not assign all fixtures. No available vessel. Try again.")))
-      
-
-    (if (and (empty? overlapping-fixtures) (>= (get-in fixture [:p :from]) drawn-vessel-built)) ;update fixture command with ref to vessel.. ok if available + if old enough.. if not try again..
-      (into vessel-fixtures all-commands)
-      (recur (select-by-weight vessels (first preferred-vessels) (last preferred-vessels)) (inc tries))
-      )))
-
-
-(defn assign-fixtures-to-vessels [fixtures vessels preferred-vessels now-date-time]
-  (loop [unassigned-fixtures fixtures         
-         vessel-fixtures []]
-    (println (count unassigned-fixtures) "fixtures left to assign to vessels")
-    (if (empty? unassigned-fixtures)
-      vessel-fixtures
-      (recur (rest unassigned-fixtures) (assign-fixture-to-vessel (first unassigned-fixtures) vessels vessel-fixtures preferred-vessels now-date-time))
-    )))
-
-(defn generate-vessel-commands [num-vessels vessel-age now-date-time]
-  (def ages (randomize-percentile vessel-age (range num-vessels)))
-  (map (fn [vessel]
-         {:a-type :vessel
-          :a-id ""
-          :command "aggregate.vessel/create-vessel"
-          :p {:id (util.uuid/create-uuid-string)
-              :name (str "Some vessel " vessel)
-              :built (ut/from-zoned-date-time (t/adjust now-date-time t/minus (t/months (nth ages vessel))))}
-           })
-       (range num-vessels))
-  )
-
-(defn generate-fixture-commands [fixtures-per-month contract-lengths start-date-time]
-  (def tot-fixtures (reduce + fixtures-per-month))
-  (def durations (randomize-percentile contract-lengths (range tot-fixtures)))
-  (def fixtures (map (fn [fixture]
-        (let [duration (nth durations fixture)
-              month (find-group (inc fixture) fixtures-per-month)
-              from (t/adjust
-                    (t/adjust start-date-time t/plus (t/months month))
-                    t/plus (t/days (rand 30)))
-              to (t/adjust (t/adjust from t/plus (t/days duration)) t/minus (t/millis 1))]
-         {:a-type :fixture
-          :a-id ""
-          :command "aggregate.fixture/create-fixture"
-          :p {:id (util.uuid/create-uuid-string)
-              :from (ut/from-zoned-date-time from)
-              :to (ut/from-zoned-date-time to)
-              }
-          }))
-          (range tot-fixtures)))
-  fixtures)
-
 (defn generate-ais-report-command [a-id type received]
          {:a-type :vessel
           :a-id a-id
@@ -276,10 +157,116 @@
           }
   )
 
-(defn generate-ais-report-commands [vessels ais-event-resolution start-date-time now-date-time]
+(defn generate-fixture-command [from to]
+    {:a-type :fixture
+          :a-id ""
+          :command "aggregate.fixture/create-fixture"
+          :p {:id (util.uuid/create-uuid-string)
+              :from (ut/from-zoned-date-time from)
+              :to (ut/from-zoned-date-time to)
+              }})
 
-  (def start (ut/from-zoned-date-time start-date-time))
-  (def end (ut/from-zoned-date-time now-date-time))
+(defn generate-idle-commands [fixture prev-fixture vessel] []) ; enable below to add idle periods
+(defn old-generate-idle-commands [fixture prev-fixture vessel]
+
+  (def from (let []
+              (def tmp-from (if (nil? prev-fixture)
+                (get-in vessel [:p :built])
+                ( + 1 (get-in prev-fixture [:p :to]))))))
+
+  (def to (let []
+              (def tmp-to (- (get-in fixture [:p :from]) 1))))
+
+  (def days-14 (* 86400000 14))
+
+  (if (= from to)
+    []
+     (if (> (- to from) days-14) ;split in tow if over 14 days
+       [(generate-period-command (get-in vessel [:p :id]) :vessel from (- (+ from days-14) 1) "Some first idle period")
+        (generate-period-command (get-in vessel [:p :id]) :vessel (+ from days-14) to "Some other idle period")]
+       
+       (if (< (- to from) 0) []
+           [(generate-period-command (get-in vessel [:p :id]) :vessel from to "Some idle period")])
+       )))
+
+(defn assign-fixture-to-vessel [fixture vessels vessel-fixtures preferred-vessels]
+  (loop [drawn-vessel (select-by-weight vessels (first preferred-vessels) (last preferred-vessels)) tries 0]
+    (def drawn-vessel-id (get-in drawn-vessel [:p :id]))
+    (def drawn-vessel-built (get-in drawn-vessel [:p :built]))
+    (def fixtures-to-check (filter #(= drawn-vessel-id (get-in % [:p :vessel-id])) vessel-fixtures))
+    (def overlapping-fixtures []) ;switch to enable overlap test on fixture periods
+    (def old-overlapping-fixtures (filter (fn [f]
+                                        (let [fixture-from (get-in fixture [:p :from])
+                                              fixture-to (get-in fixture [:p :to])
+                                              check-from (get-in f [:p :from])
+                                              check-to (get-in f [:p :to])]
+
+                                          (if (or
+                                               (and (>= fixture-from check-from) (<= fixture-from check-to))
+                                               (and (>= fixture-to check-from) (<= fixture-to check-to))
+                                               ) true false)
+                                          )) fixtures-to-check))
+    (def prev-fixture (last fixtures-to-check))
+    (def all-commands (conj (generate-idle-commands fixture prev-fixture drawn-vessel)
+                            (generate-period-command drawn-vessel-id :fixture (get-in fixture [:p :from]) (get-in fixture [:p :to]) "")
+                            (assoc-in fixture [:p :vessel-id] drawn-vessel-id)))
+    (if (= tries (* (count vessels) 100)) (throw (Exception. "Could not assign all fixtures. No available vessel. Try again.")))
+      
+
+    (if (and (empty? overlapping-fixtures) (>= (get-in fixture [:p :from]) drawn-vessel-built)) ;update fixture command with ref to vessel.. ok if available + if old enough.. if not try again..
+      (into vessel-fixtures all-commands)
+      (recur (select-by-weight vessels (first preferred-vessels) (last preferred-vessels)) (inc tries))
+      )))
+
+
+(defn assign-fixtures-to-vessels [fixtures vessels preferred-vessels]
+  (loop [unassigned-fixtures fixtures         
+         vessel-fixtures []]
+    (if (= (mod (count unassigned-fixtures) 1000) 0) (println (count unassigned-fixtures) "fixtures left to assign to vessels"))
+    (if (empty? unassigned-fixtures)
+      vessel-fixtures
+      (recur (rest unassigned-fixtures) (assign-fixture-to-vessel (first unassigned-fixtures) vessels vessel-fixtures preferred-vessels))
+    )))
+
+(defn generate-vessel-commands [num-vessels min-vessel-age max-vessel-age end-date-time]
+  (def ages (rand-range-int-seq num-vessels (* 12 min-vessel-age) (* 12 max-vessel-age)))
+    
+  (map (fn [vessel]
+         {:a-type :vessel
+          :a-id ""
+          :command "aggregate.vessel/create-vessel"
+          :p {:id (util.uuid/create-uuid-string)
+              :name (str "Some vessel " vessel)
+              :built (ut/from-zoned-date-time (t/adjust end-date-time t/minus (t/months (nth ages vessel))))}
+           })
+       (range num-vessels))
+  )
+
+(defn generate-fixture-commands [vessels min-vessel-utilization max-vessel-utilization min-contract-length max-contract-length start-date-time end-date-time]
+  (def all-periods (ut/split-zoned-date-time-into-months start-date-time end-date-time))
+  (loop [periods all-periods fixtures []]
+    (def period (first periods))
+    (def utilization (rand-range min-vessel-utilization (+ max-vessel-utilization 0.01)))
+    (def available-vessels-for-this-period (count (filter #(<= (get-in % [:p :built]) (ut/from-zoned-date-time period)) vessels)))
+    (def fixture-lengths (assign-randomly-to-seq (* available-vessels-for-this-period 30 utilization) min-contract-length max-contract-length))
+    (if (nil? period)
+      fixtures
+      (recur (rest periods) (concat fixtures
+                                    (doall (map (fn [l]
+                                           (def from-day (rand-range-int 0 30)) ;0 - 29 plus first day so 1 - 30
+                                           (def from (t/adjust period t/plus (t/days from-day)))
+                                           (def to (ut/to-zoned-date-time (-
+                                                                           (ut/from-zoned-date-time (t/adjust from t/plus (t/days l)))
+                                                                           1
+                                                                           ) "Europe/Oslo"))
+                                           (generate-fixture-command from to))
+                                         fixture-lengths)
+                                    )))
+      )))
+
+(defn generate-ais-report-commands [vessels ais-event-resolution start-date-time from-date-time end-date-time]
+  (def start (ut/from-zoned-date-time from-date-time))
+  (def end (ut/from-zoned-date-time end-date-time))
   (def time-delay (* ais-event-resolution 60 60 1000))
 
   (loop [cur-time start reports []]
@@ -296,20 +283,18 @@
       reports
       (recur (+ cur-time time-delay) (into reports new-reports))
     ))
-
-
   )
 
-(defn generate-commands [{:keys [num-vessels vessel-age fixtures-per-month contract-lengths start-date-time now-date-time preferred-vessels ais-event-resolution port-calls-per-fixture]}]
+(defn generate-commands [{:keys [num-vessels min-vessel-age max-vessel-age preferred-vessels min-vessel-utilization max-vessel-utilization min-contract-length max-contract-length ais-event-resolution start-date-time end-date-time]}]
   
-  (def vessels (generate-vessel-commands num-vessels vessel-age now-date-time))
+  (def vessels (generate-vessel-commands num-vessels min-vessel-age max-vessel-age end-date-time))
   (println (count vessels) "vessels generated")
-  (def fixtures (generate-fixture-commands fixtures-per-month contract-lengths start-date-time))
+  (def fixtures (generate-fixture-commands vessels min-vessel-utilization max-vessel-utilization min-contract-length max-contract-length start-date-time end-date-time))
   (println (count fixtures) "fixtures generated")  
-  (def assigned-fixtures (assign-fixtures-to-vessels fixtures vessels preferred-vessels now-date-time))
+  (def assigned-fixtures (assign-fixtures-to-vessels fixtures vessels preferred-vessels))
   (println (count fixtures) "fixtures assigned")
   (println (- (count assigned-fixtures) (count fixtures)) "vessel periods generated")  
-  (def ais-reports (generate-ais-report-commands vessels ais-event-resolution start-date-time now-date-time))
+  (def ais-reports (generate-ais-report-commands vessels ais-event-resolution start-date-time end-date-time))
   (println (count ais-reports) "AIS reports generated")
   
   (def tot-commands (vec (concat
@@ -417,19 +402,25 @@
         (def aggregate (d/load-aggregate-es- storage :vessel (:a-id t)))
         (def events (s/stream- storage (:a-id t) true))
         (def commands (s/stream- storage (:a-id t) false))
+        (def num-events (count events))
+        (def num-commands (count commands))
+        
+
 
         (recur (rest tests)
                (conj with-metadata (assoc t
                                           :size-of-aggregate-bytes (mm/measure aggregate :bytes true)
                                           :entities-in-aggregate (+ 1 (count (:positions aggregate)) (count (:periods aggregate)))
-                                          :num-events (count events)
+                                          :num-events num-events
                                           :event-types (frequencies (map #(:n %) events))
                                           :size-of-events-bytes (mm/measure events :bytes true)
-                                          :num-commands (count commands)
+                                          :num-commands num-commands
                                           :size-of-commands-bytes (mm/measure commands :bytes true)
                                           :command-types (frequencies (map #(keyword (name (:n %))) commands))
                                           :average-load-times-ms (stats/mean (:load-times-ms t))
-                                          :load-times-ms nil
+                                          :events-loaded-per-s-if-event-sourcing (int (/ 1000 (/ (stats/mean (:load-times-ms t)) num-events)))
+                                          :commands-loaded-per-s-if-command-sourcing (int (/ 1000 (/ (stats/mean (:load-times-ms t)) num-commands)))
+                                          :load-times-ms nil ; remove to show all loading times
                                           ))
                )))))
 
@@ -440,9 +431,10 @@
   ;prepare - keep existing commands or produce new onew
   (if (not (nil? all-commands)) (do
                                             (println "Clearing out event store" (:type storage))
+                                            (d/reset-aggregate-cache!)
                                             (reset-event-store! storage)
                                             (println "Executing commands on event store ...this might take some time..." (:type storage))
-                                            (dorun (map #(d/dispatch-es! storage (:a-type %) (:a-id %) (:command %) (:p %)) all-commands))
+                                            (dorun (map #(d/dispatch-aggregate-cache! storage (:a-type %) (:a-id %) (:command %) (:p %)) all-commands))
                                             (println "Backing up events" (:type storage))
                                             (s/backup-event-store! storage)))
 
@@ -474,20 +466,23 @@
    }
  )
 
-(defn write-test-results! [data directory]
-  (def output-fn (str directory "/" (ut/timestamp) ".edn"))
+(defn write-test-results! [data config]
+  (def output-fn (str (:test-output-dir config) "/" (ut/timestamp) ".edn"))
+  (def output-fn2 (str (:test-output-dir config) "/" (ut/timestamp) "-params.edn"))
   (io/make-parents output-fn)
   (spit output-fn (pr-str data))
+  (spit output-fn2 (pr-str config))
+  (clojure.pprint/pprint config)
   (clojure.pprint/pprint data)
-  (println "multi-file-edn" (get-in data [:multi-file-edn :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
-  (println "mongodb" (get-in data [:mongodb :no-pruning :aggregates 0 :num-events]) (get-in data [:mongodb :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
-  (println "mysql" (get-in data [:mysql :no-pruning :aggregates 0 :num-events]) (get-in data [:mysql :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
-  (println "Output written to" output-fn)
+;  (println "multi-file-edn" (get-in data [:multi-file-edn :no-pruning :aggregates 0 :num-events]) (get-in data [:multi-file-edn :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
+;  (println "mongodb" (get-in data [:mongodb :no-pruning :aggregates 0 :num-events]) (get-in data [:mongodb :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
+;  (println "mysql" (get-in data [:mysql :no-pruning :aggregates 0 :num-events]) (get-in data [:mysql :no-pruning :aggregates 0 :average-load-times-ms]) (:ais-event-resolution test-config))
+  (println "Output written to" output-fn "and" output-fn2)
   )
 
 (defn execute! [config]
   (doall (repeatedly (:random-data-sets config)
-                     #(write-test-results! (test-on-new-data-set! config) (:test-output-dir config))
+                     #(write-test-results! (test-on-new-data-set! config) config)
                      ))
   (println "Done!")
 )
@@ -499,4 +494,4 @@
            
 (defn -main [& args]
   (if (nil? args) (help)
-      (execute! (clojure.edn/read-string (first args)))))
+      (execute! test-config)))
