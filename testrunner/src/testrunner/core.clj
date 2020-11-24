@@ -134,8 +134,8 @@
    :num-vessels 1
    :min-vessel-age 6
    :max-vessel-age 6
-   :min-vessel-utilization 0.52
-   :max-vessel-utilization 0.52
+   :min-vessel-utilization 0.50
+   :max-vessel-utilization 0.50
    :ais-event-resolution ais-event-resolution
 }))
 
