@@ -89,7 +89,7 @@
    :max-vessel-utilization 0.72 ; \cite{obtainingContracts} p 20
    :min-contract-length 3 ; min days of contract. spot market is <= 30 days
    :max-contract-length 30 ; max days of contract. spot market is <= 30 days
-   :ais-event-resolution 24 ; hours between each report.. track candidate vessels for a given area
+   :ais-event-resolution 240 ; hours between each report.. track candidate vessels for a given area
 
    ;dates
    :start-date-time (t/zoned-date-time 2021 1 1) ; simulation starts
@@ -125,7 +125,7 @@
 
    ;test orchestration
    :random-data-sets 1 ;times the whole suite of tests will be run. i.e. how many distinct data sets we will generate
-   :iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
+   :test-iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
    :cooldown-time 300 ;sec delay before each test set (per pruning)
    :test-output-dir "/mnt/data/testrunner"
    })
