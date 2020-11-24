@@ -89,7 +89,7 @@
    :max-vessel-utilization 0.72 ; \cite{obtainingContracts} p 20
    :min-contract-length 3 ; min days of contract. spot market is <= 30 days
    :max-contract-length 30 ; max days of contract. spot market is <= 30 days
-   :ais-event-resolution 240 ; hours between each report.. track candidate vessels for a given area
+   :ais-event-resolution 24 ; hours between each report.. track candidate vessels for a given area
 
    ;dates
    :start-date-time (t/zoned-date-time 2021 1 1) ; simulation starts
