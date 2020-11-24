@@ -74,14 +74,13 @@
 ; end helper
 
 ;start config
-(def old-num-vessels (rand-range-int 120 313))
+; population vessels ))
 (def num-vessels (rand-range-int 12 31))
 
 (def test-config
   {
    ;simulation
-   :num-vessels num-vessels ; num vessels to be generated see \cite{obtainingContracts} p 19
-   ;:avg-vessel-age (rand-range 6 (inc 9)) ; vessel age to distribute see \cite{obtainingContracts} p 19
+   :num-vessels num-vessels ; num vessels (population = 120 - 313 with an average age of 6-9 years) to be generated see \cite{obtainingContracts} p 19
    :min-vessel-age 0 ; see \cite{obtainingContracts} p 19
    :max-vessel-age 11 ; see \cite{obtainingContracts} p 19
    :preferred-vessels [40 1.3] ; 40% of vessels are preffered with weight at 1.3. Not from any source.
@@ -129,6 +128,25 @@
    :cooldown-time 300 ;sec delay before each test set (per pruning)
    :test-output-dir "/mnt/data/testrunner"
    })
+
+(defn generate-sensitivity-test-ais-resolution-config [ais-event-resolution]
+  (merge test-config {
+   :num-vessels 1
+   :min-vessel-age 8
+   :max-vessel-age 8
+   :min-vessel-utilization 0.52
+   :max-vessel-utilization 0.52
+   :ais-event-resolution ais-event-resolution
+}))
+
+(defn generate-sensitivity-test-utilization-config [utilization]
+  (merge test-config {
+   :num-vessels 1
+   :min-vessel-age 8
+   :max-vessel-age 8
+   :min-vessel-utilization utilization
+   :max-vessel-utilization utilization
+}))
 
 ; command generation functions:
 
