@@ -132,8 +132,8 @@
 (defn generate-sensitivity-test-ais-resolution-config [ais-event-resolution]
   (merge test-config {
    :num-vessels 1
-   :min-vessel-age 8
-   :max-vessel-age 8
+   :min-vessel-age 6
+   :max-vessel-age 6
    :min-vessel-utilization 0.52
    :max-vessel-utilization 0.52
    :ais-event-resolution ais-event-resolution
@@ -142,8 +142,8 @@
 (defn generate-sensitivity-test-utilization-config [utilization]
   (merge test-config {
    :num-vessels 1
-   :min-vessel-age 8
-   :max-vessel-age 8
+   :min-vessel-age 6
+   :max-vessel-age 6
    :min-vessel-utilization utilization
    :max-vessel-utilization utilization
 }))
