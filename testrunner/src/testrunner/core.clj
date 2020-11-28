@@ -97,6 +97,7 @@
    ;pruning
    :bounded-buffer 100 ; keep last 50 events. snapshot of the rest
    :hierarchical-windows [30 59 2 60 99999 4] ; days 30 - 60 keep every 2. After that keep every 4
+   :probabilistic 90 ; days to keep ais report
 
    ;event-storage
    :storage-mysql {:type :mysql
@@ -392,7 +393,7 @@
   (s/restore-event-store! storage)
   (def vessels (qv/get-all-vessel-ids- (:projections-storage config)))
   (println "Pruning for probabilistic tests")
-  (def pruning-data (p/prune-bounded! storage (:projections-storage config) (:bounded-buffer config) vessels))
+  (def pruning-data (p/prune-probabilistic! storage (:projections-storage config) (ut/from-zoned-date-time (:end-date-time config)) vessels))
   (cooldown (:cooldown-time config)) 
   (println "Running probabilistic tests" (:type storage))  
   (run-single-tests- storage true (:test-iterations config) vessels pruning-data)
@@ -402,7 +403,7 @@
   (s/restore-event-store! storage)
   (def vessels (qv/get-all-vessel-ids- (:projections-storage config)))
   (println "Pruning for hierarchical tests")
-  (def pruning-data (p/prune-hierarchical! storage (:projections-storage config) (ut/from-zoned-date-time (:now-date-time config)) (:hierarchical-windows config) vessels))
+  (def pruning-data (p/prune-hierarchical! storage (:projections-storage config) (ut/from-zoned-date-time (:end-date-time config)) (:hierarchical-windows config) vessels))
   (cooldown (:cooldown-time config)) 
   (println "Running hierarchical tests" (:type storage))  
   (run-single-tests- storage true (:test-iterations config) vessels pruning-data)
