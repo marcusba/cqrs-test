@@ -97,7 +97,6 @@
    ;pruning
    :bounded-buffer 100 ; keep last 50 events. snapshot of the rest
    :hierarchical-windows [30 59 2 60 99999 4] ; days 30 - 60 keep every 2. After that keep every 4
-   :probabilistic 90 ; days to keep ais report
 
    ;event-storage
    :storage-mysql {:type :mysql
