@@ -6,4 +6,4 @@
 (defn round "Round a double to the given precision (number of significant digits)"
   [d precision]
   (let [factor (Math/pow 10 precision)]
-    (/ (Math/round (* d factor)) factor)))
+    (/ (Math/round (* (if (nil? d) 0 d) factor)) factor)))

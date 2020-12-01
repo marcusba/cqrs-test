@@ -96,8 +96,14 @@
         :q1 q1
         :q3 q3
         :total sm
-        :sd-population (util.math/round sd-population 2)
-        :sd-sample (util.math/round sd-sample 2)
+        :sd-population-1 (util.math/round sd-population 2)
+        :sd-population-2 (util.math/round (* 2 sd-population) 2)
+        :sd-population-4 (util.math/round (* 4 sd-population) 2)
+        :sd-population-6 (util.math/round (* 6 sd-population) 2)
+        :sd-sample-1 (util.math/round sd-sample 2)
+        :sd-sample-2 (util.math/round (* 2 sd-sample) 2)
+        :sd-sample-4 (util.math/round (* 4 sd-sample) 2)
+        :sd-sample-6 (util.math/round (* 6 sd-sample) 2)
         :mad mad
         :lav lav
         :uav uav}))
