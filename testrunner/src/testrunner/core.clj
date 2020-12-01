@@ -76,8 +76,6 @@
 ;start config
 ; population vessels ))
 (def num-vessels (rand-range-int 12 31))
-
-(println "ais resolution must be fixed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! + utilization + cooldown + num vessels")
 (def test-config
   {
    ;simulation
