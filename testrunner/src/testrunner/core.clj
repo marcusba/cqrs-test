@@ -77,6 +77,7 @@
 ; population vessels ))
 (def num-vessels (rand-range-int 12 31))
 
+(println "ais resolution must be fixed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! + utilization + cooldown + num vessels")
 (def test-config
   {
    ;simulation
@@ -451,7 +452,8 @@
                                             (d/reset-aggregate-cache!)
                                             (reset-event-store! storage)
                                             (println "Executing commands on event store ...this might take some time..." (:type storage))
-                                            (dorun (map #(d/dispatch-aggregate-cache! storage (:a-type %) (:a-id %) (:command %) (:p %)) all-commands))
+                                            (def command-time (b/benchmark (dorun (map #(d/dispatch-aggregate-cache! storage (:a-type %) (:a-id %) (:command %) (:p %)) all-commands))))
+                                            (println "Executing commands on " (:type storage) " took " command-time)
                                             (println "Backing up events" (:type storage))
                                             (s/backup-event-store! storage)))
 

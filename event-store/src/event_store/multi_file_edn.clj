@@ -60,16 +60,14 @@
    []))
 
 (defmethod s/delete-event! :multi-file-edn [{:keys [directory] :as connection} s event]
-  (def events (filter #(not (= event %)) (s/stream- connection s true)))
-
+  (def events (filter #(not (= (dissoc event :s) %)) (s/stream- connection s true)))
   (s/delete-stream! connection s true) 
-
   (doseq [e events]
     (s/persist-event! connection (assoc e :s s) true)))
 
 (defmethod s/delete-events! :multi-file-edn [{:keys [directory] :as connection} s remove-events]
   (def events (filter
-               (fn [e] (not (some #(= e %) remove-events)))
+               (fn [e] (not (some #(= (dissoc e :s) %) remove-events)))
                (s/stream- connection s true)))
   
   (s/delete-stream! connection s true)

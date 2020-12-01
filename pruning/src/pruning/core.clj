@@ -87,7 +87,7 @@
                                            (not (or (>= (get-in % [:p :from]) now)
                                                     (>= (get-in % [:p :to]) now)))) events)))
 
-             (doseq [e remove-events] (s/delete-event! storage s (assoc e :s s)))))
+             (s/delete-events! storage s remove-events)))
              {:a-id s :time-ms tm}))))
 
 (defn remove-events-for-window [from to remove-every-nth now events]
