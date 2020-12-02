@@ -67,9 +67,9 @@
 
              (if (not (empty? aggregate)) (do
                                             (s/delete-stream! storage s true)
-                                            (d/dispatch-es! storage :vessel s "aggregate.vessel/create-vessel-full-snapshot" aggregate))
+                                            (d/dispatch-es! storage :vessel s "aggregate.vessel/create-vessel-full-snapshot" aggregate)
                  (doseq [e keep-events]
-                   (s/persist-event! storage (assoc e :s s) true)))))
+                   (s/persist-event! storage (assoc e :s s) true))))))
 
              {:a-id s :time-ms tm}
              ))))

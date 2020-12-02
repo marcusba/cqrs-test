@@ -124,7 +124,7 @@
    ;test orchestration
    :random-data-sets 1 ;times the whole suite of tests will be run. i.e. how many distinct data sets we will generate
    :test-iterations 1000 ;how many times each test will run for each pruning method e.g. loading an aggregate 1000 times
-   :cooldown-time 300 ;sec delay before each test set (per pruning)
+   :cooldown-time 120 ;sec delay before each test set (per pruning)
    :test-output-dir "/mnt/data/testrunner"
    })
 
@@ -456,12 +456,12 @@
                                             (s/backup-event-store! storage)))
 
   (def res {:no-pruning {:aggregates (add-aggregate-metadata- storage (run-no-pruning-tests! config storage) true) }
-   :superseeded {:aggregates (add-aggregate-metadata- storage (run-superseeded-tests! config storage) true) }
+  ; :superseeded {:aggregates (add-aggregate-metadata- storage (run-superseeded-tests! config storage) true) }
    :bounded {:aggregates (add-aggregate-metadata- storage (run-bounded-tests! config storage) true) }
-   :probabilistic {:aggregates (add-aggregate-metadata- storage (run-probabilistic-tests! config storage) true) }
-   :hierarchical {:aggregates (add-aggregate-metadata- storage (run-hierarchical-tests! config storage) true) }
-   :full-snapshot {:aggregates (add-aggregate-metadata- storage (run-full-snapshot-tests! config storage) true) }
-   :command-sourcing {:aggregates (add-aggregate-metadata- storage (run-command-sourcing-tests! config storage) false) }
+  ; :probabilistic {:aggregates (add-aggregate-metadata- storage (run-probabilistic-tests! config storage) true) }
+  ; :hierarchical {:aggregates (add-aggregate-metadata- storage (run-hierarchical-tests! config storage) true) }
+  ; :full-snapshot {:aggregates (add-aggregate-metadata- storage (run-full-snapshot-tests! config storage) true) }
+  ; :command-sourcing {:aggregates (add-aggregate-metadata- storage (run-command-sourcing-tests! config storage) false) }
             })
 
  ; (if (not (nil? postfn)) (postfn))
@@ -477,9 +477,9 @@
   (println "Generating commands")
   (def all-commands (generate-commands config))
   {:metadata {:num-fixtures (reduce #(if (= (:command %2) "aggregate.fixture/create-fixture") (inc %1) %1) 0 all-commands)}
-   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands nil nil)
+;   :mongodb (run-single-store-tests! config (:storage-mongodb config) all-commands nil nil)
    :mysql (run-single-store-tests! config (:storage-mysql config) all-commands nil nil)
-   :multi-file-edn (run-single-store-tests! config (:storage-multi-file-edn config) all-commands nil nil)
+ ;  :multi-file-edn (run-single-store-tests! config (:storage-multi-file-edn config) all-commands nil nil)
    }
  )
 
